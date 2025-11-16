@@ -41,13 +41,78 @@ Before you begin, make sure you have the following installed:
    MYSQL_DB=your_database
    ```
 
-## Usage
+## Begineer Guid
 
+1. Docker Installation .
+
+```
+sudo apt install docker.io
+```
+
+
+2. Build Docker-image form Dockerfile
+```
+docker build -t flaskapp .
+```
+3. Check image is build
+```
+docker images
+```
+
+4. Create a netowk to have communication between the flaskapp and mysql container
+ 
+ ```
+ docker network create twotire
+
+ ```
+5. Now run the Containers
+```
+docker run -d  -p 3306:3306 --name=mysql  --network=twotire   -e MYSQL_ROOT_PASSWORD=admin   -e MYSQL_USER=admin   -e MYSQL_PASSWORD=admin   -e MYSQL_DATABASE=myDB   mysql:5.7
+docker run -d -p 5000:5000 --name=flaskapp  --network=twotire   -e MYSQL_HOST=mysql   -e MYSQL_USER=admin   -e MYSQL_PASSWORD=admin   -e MYSQL_DB=myDB   flaskapp:latest
+
+
+```
+6. Check is the applicaiton is runing on `PbulicIP:5000`.  if security group is not configured then edit its inboud rule for port 5000.
+
+7. To go inside mysql container take container ID from `docker ps` then
+
+```
+docker exec -it CONTAINER-ID bash
+```
+
+-  for mysql container
+
+```
+mysql -u root -p
+```
+-  Now  to see show databases
+
+```
+show databases;
+```
+
+-  to do inside a database 
+
+```
+
+use myDB; # or your database name 
+
+```
+
+-  then to list the tables inside that database
+
+```
+show tables;
+```
+
+
+
+## Usage
 1. Start the containers using Docker Compose:
 
-   ```bash
-   docker-compose up --build
-   ```
+```
+ docker-compose up --build
+ ```
 
 2. Access the Flask app in your web browser:
 
