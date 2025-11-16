@@ -105,7 +105,20 @@ use myDB; # or your database name
 show tables;
 ```
 
+8. Push the Docker image to DockerHub
+```
+docker login
+docker tag flaskapp:latest USERNAME/flaskapp:latest 
+docker push  USERNAME/flaskapp:latest 
+```
 
+
+9. Install Docker compose
+```
+sudo apt install docker-compose
+```
+
+Now part goes to docker-compose 
 
 ## Usage
 1. Start the containers using Docker Compose:
