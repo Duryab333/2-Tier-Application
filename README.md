@@ -206,5 +206,162 @@ docker run -d \
 
 - If you encounter issues, check Docker logs and error messages for troubleshooting.
 
+
+
+
+# Setup K8s-Cluster on EC2
+
+## 1- Create 2 EC2 instances. One is Master Node and other is Worker Node
+## 2- Run those commands on both Nodes
+
+STEP 1 — Disable Swap (Master + Workers)
+
 ```
+
+sudo swapoff -a
+sudo sed -i '/ swap / s/^/#/' /etc/fstab
+```
+
+STEP 2 — Load Kernel Modules (Master + Workers)
+```
+cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+overlay
+br_netfilter
+EOF
+
+sudo modprobe overlay
+sudo modprobe br_netfilter
+```
+
+STEP 3 — Apply sysctl Settings
+
+```
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+
+sudo sysctl --system
+
+```
+
+STEP 4 — Install Docker Engine (NOT containerd)
+
+```
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg
+
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+  | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+Enable Docker:
+
+```
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+
+
+STEP 5 - Install cri-dockerd (Required for kubeadm + Docker)
+
+```
+wget https://github.com/Mirantis/cri-dockerd/releases/download/v0.3.21/cri-dockerd_0.3.21.3-0.ubuntu-jammy_amd64.deb
+sudo dpkg -i cri-dockerd_0.3.21.3-0.ubuntu-jammy_amd64.deb
+sudo apt-get install -f -y
+sudo systemctl enable cri-docker.service
+sudo systemctl enable --now cri-docker.socket
+sudo systemctl status cri-docker.socket
+
+
+```
+
+STEP 6 — Install Kubernetes (kubeadm, kubelet, kubectl)
+
+
+```
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key \
+  | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes.gpg
+
+echo "deb [signed-by=/etc/apt/keyrings/kubernetes.gpg] \
+  https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /" \
+  | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+
+```
+
+
+## 3- Only on Master Node
+1- Initialize the Cluster:
+
+```
+sudo kubeadm init --cri-socket unix:///var/run/cri-dockerd.sock
+
+```
+
+2- Set Up Local kubeconfig:
+
+```
+mkdir -p "$HOME"/.kube
+sudo cp -i /etc/kubernetes/admin.conf "$HOME"/.kube/config
+sudo chown "$(id -u)":"$(id -g)" "$HOME"/.kube/config
+```
+
+3- Install a Network Plugin (Calico):
+
+```
+kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.0/manifests/calico.yaml
+```
+
+4- Generate Join Command:
+
+```
+kubeadm token create --print-join-command
+```
+
+> Copy this generated token for next command.
+
+
+## Execute on ALL of your Worker Nodes
+
+1- Perform pre-flight checks:
+
+```
+sudo kubeadm reset pre-flight checks
+```
+
+2- Paste the join command you got from the master node and append --v=5 at the end:
+
+```
+sudo kubeadm join <private-ip-of-control-plane>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash> --cri-socket 
+"unix:///run/containerd/containerd.sock" --v=5
+```
+
+Note: When pasting the join command from the master node:
+
+> Add sudo at the beginning of the command
+> Add --v=5 at the end
+Example format:
+
+```
+sudo <paste-join-command-here> --v=5 
+```
+
 
