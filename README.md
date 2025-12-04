@@ -356,9 +356,9 @@ sudo kubeadm join <private-ip-of-control-plane>:6443 --token <token> --discovery
 
 Note: When pasting the join command from the master node:
 
-> Add sudo at the beginning of the command
-> Add --v=5 at the end
-> specify CRI docker,Since Kubernetes removed native Docker support after v1.24, Docker now requires the cri-dockerd shim to communicate with kubelet.
+- > Add sudo at the beginning of the command
+- > Add --v=5 at the end
+- > specify CRI docker,Since Kubernetes removed native Docker support after v1.24, Docker now requires the cri-dockerd shim to communicate with kubelet.
 Example format:
 
 ```
