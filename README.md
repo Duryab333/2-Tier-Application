@@ -351,7 +351,7 @@ sudo kubeadm reset pre-flight checks
 
 ```
 sudo kubeadm join <private-ip-of-control-plane>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash> --cri-socket 
-"unix:///run/containerd/containerd.sock" --v=5
+"unix:///run/containerd/containerd.sock" 
 ```
 
 Note: When pasting the join command from the master node:
