@@ -358,10 +358,11 @@ Note: When pasting the join command from the master node:
 
 > Add sudo at the beginning of the command
 > Add --v=5 at the end
+> specify CRI docker,Since Kubernetes removed native Docker support after v1.24, Docker now requires the cri-dockerd shim to communicate with kubelet.
 Example format:
 
 ```
-sudo <paste-join-command-here> --v=5 
+sudo <paste-join-command-here> --cri-socket unix:///var/run/cri-dockerd.sock 
 ```
 
 
