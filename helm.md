@@ -52,11 +52,7 @@ kubectl get all
 
 ```
 
-If something goes wrong then
+> If something goes wrong then `helm uninstall mysql-chart` then make changes in mysql-chart/ files and again package and install
 
-```
 
-helm uninstall mysql-chart
 
-```
-then make changes in mysql-chart/ files and again package and install 
